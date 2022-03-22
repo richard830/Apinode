@@ -1,35 +1,73 @@
 const { response, request } = require('express');
+const bcryptjs = require('bcryptjs');
+const Usuario = require('../models/usuario');
 
-const usuariosGet = (req = request, res = response) => {
-    const query = req.query;
+const usuariosGet = async (req = request, res = response) => {
+
+    const { limit = 5, desde = 0 } = req.query;
+
+    const [total, usuarios] = await Promise.all([
+        Usuario.countDocuments({ estado: true }),
+        Usuario.find({ estado: true })
+            .skip(Number(desde))
+            .limit(Number(limit))
+    ]);
+
+
     res.json(
         {
-            msj: 'Hola richard get',
-            query
+            total,
+            usuarios
         }
     )
 }
 
 
-const usuariosPost = (req, res = response) => {
-    const body = req.body;
+
+
+
+const usuariosPost = async (req, res = response) => {
+
+    const { nombre, correo, password, rol } = req.body;
+    const usuario = new Usuario({ nombre, correo, password, rol });
+
+
+    //encritar contraseña
+    const salt = bcryptjs.genSaltSync();
+    usuario.password = bcryptjs.hashSync(password, salt)
+
+    //guardar base de dato
+    await usuario.save();
+
+
 
     res.json(
         {
-            msj: 'Hola richard Post',
-            body
+            // msj: 'Hola richard Post',
+            usuario
         }
     )
 }
-const usuariosPut = (req, res = response) => {
+
+
+const usuariosPut = async (req, res = response) => {
     const { id } = req.params;
-    res.json(
-        {
-            msj: 'Hola richard put',
-            id
-        }
-    )
+    const { _id, password, google, correo, ...resto } = req.body;
+
+    if (password) {
+        //encritar contraseña
+        const salt = bcryptjs.genSaltSync();
+        resto.password = bcryptjs.hashSync(password, salt)
+
+    }
+
+    const usuario = await Usuario.findByIdAndUpdate(id, resto);
+
+    res.json(usuario)
 }
+
+
+
 const usuariosDelete = (req, res = response) => {
     res.json(
         {
@@ -41,7 +79,7 @@ const usuariosPath = (req, res = response) => {
     res.json(
         {
             msj: 'Hola richard Path'
-            
+
         }
     )
 }
