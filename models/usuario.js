@@ -32,7 +32,8 @@ const UsuarioSchema = Schema({
 
 //NO MOSTRAR LA PASSWORD NI LA VERSION EN LA BASE DE DATOS
 UsuarioSchema.methods.toJSON = function () {
-    const { __v, password, ...usuario } = this.toObject();
+    const { __v, password, _id, ...usuario } = this.toObject();
+    usuario.uid = _id;
     return usuario;
 }
 
